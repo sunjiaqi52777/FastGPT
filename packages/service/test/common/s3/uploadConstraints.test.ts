@@ -1,13 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   avatarAllowedExtensions,
   createUploadConstraints,
   datasetAllowedExtensions,
+  getDatasetAllowedExtensions,
   getAllowedExtensionsFromFileSelectConfig,
   getUploadExtensionRulesFromFileSelectConfig,
   normalizeAllowedExtensions,
   parseAllowedExtensions
 } from '@fastgpt/service/common/s3/utils/uploadConstraints';
+
+beforeEach(() => {
+  global.systemEnv = {} as any;
+});
 
 describe('normalizeAllowedExtensions', () => {
   it('normalizes casing, leading dots and duplicates', () => {
@@ -86,6 +91,19 @@ describe('getAllowedExtensionsFromFileSelectConfig', () => {
   it('returns empty list when upload is disabled', () => {
     expect(getAllowedExtensionsFromFileSelectConfig()).toEqual([]);
   });
+
+  it('allows OFD only when enhanced parsing and the URL parser are enabled', () => {
+    global.systemEnv = {
+      customPdfParse: { url: 'http://document-parser.test/parse' }
+    } as any;
+
+    expect(
+      getAllowedExtensionsFromFileSelectConfig({ canSelectFile: true, customPdfParse: true })
+    ).toContain('.ofd');
+    expect(
+      getAllowedExtensionsFromFileSelectConfig({ canSelectFile: true, customPdfParse: false })
+    ).not.toContain('.ofd');
+  });
 });
 
 describe('getUploadExtensionRulesFromFileSelectConfig', () => {
@@ -161,5 +179,10 @@ describe('preset extension lists', () => {
       '.rtf',
       '.epub'
     ]);
+  });
+
+  it('adds OFD to dataset formats only when the URL parser is enabled', () => {
+    expect(getDatasetAllowedExtensions(false)).toEqual(datasetAllowedExtensions);
+    expect(getDatasetAllowedExtensions(true)).toEqual([...datasetAllowedExtensions, '.ofd']);
   });
 });

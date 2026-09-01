@@ -37,6 +37,24 @@ export const anydocDocumentFileExtensions = [
   '.epub'
 ] as const;
 
+/** Document formats supported only by a configured generic external parser. */
+export const externalDocumentFileExtensions = ['.ofd'] as const;
+
+/** Formats that the generic external parser may handle when enhanced parsing is enabled. */
+export const externalParseDocumentFileExtensions = [
+  '.doc',
+  '.docx',
+  '.csv',
+  '.xls',
+  '.xlsx',
+  '.pdf',
+  '.html',
+  '.ppt',
+  '.pptx',
+  '.wps',
+  '.ofd'
+] as const;
+
 export const documentFileExtensions = [
   ...builtInDocumentFileExtensions,
   ...anydocDocumentFileExtensions

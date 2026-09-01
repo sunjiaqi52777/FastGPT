@@ -115,10 +115,13 @@ export const useFileUpload = (props: UseFileUploadOptions) => {
       canSelectVideo: showSelectVideo,
       canSelectAudio: showSelectAudio,
       canSelectCustomFileExtension: showSelectCustomFileExtension,
-      customFileExtensionList: fileSelectConfig?.customFileExtensionList
+      customFileExtensionList: fileSelectConfig?.customFileExtensionList,
+      customPdfParse: fileSelectConfig?.customPdfParse && feConfigs?.showCustomDocumentParse
     });
   }, [
     fileSelectConfig?.customFileExtensionList,
+    fileSelectConfig?.customPdfParse,
+    feConfigs?.showCustomDocumentParse,
     showSelectAudio,
     showSelectCustomFileExtension,
     showSelectFile,

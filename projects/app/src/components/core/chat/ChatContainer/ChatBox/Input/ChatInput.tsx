@@ -29,6 +29,7 @@ import VoiceInput, { type VoiceInputComponentRef } from './VoiceInput';
 import MyBox from '@fastgpt/web/components/common/MyBox';
 import type { WorkflowInteractiveResponseType } from '@fastgpt/global/core/workflow/template/system/interactive/type';
 import { ChatGenerateStatusEnum, ChatSourceTypeEnum } from '@fastgpt/global/core/chat/constants';
+import { useSystemStore } from '@/web/common/system/useSystemStore';
 
 const InputGuideBox = dynamic(() => import('./InputGuideBox'));
 const PLACEHOLDER_APP_NAME_TOKEN = '__APP_NAME__';
@@ -62,6 +63,7 @@ const ChatInput = ({
   const { t } = useTranslation();
   const { toast } = useToast();
   const { isPc } = useSystem();
+  const { feConfigs } = useSystemStore();
   const VoiceInputRef = useRef<VoiceInputComponentRef>(null);
 
   const { setValue, control } = chatForm;
@@ -148,8 +150,13 @@ const ChatInput = ({
     showSelectAudio ||
     showSelectCustomFileExtension;
   const isFileTypeAllowed = useCallback(
-    (file: File) => isChatFileAllowedBySelectConfig({ file, fileSelectConfig }),
-    [fileSelectConfig]
+    (file: File) =>
+      isChatFileAllowedBySelectConfig({
+        file,
+        fileSelectConfig,
+        externalDocumentParserEnabled: feConfigs.showCustomDocumentParse
+      }),
+    [feConfigs.showCustomDocumentParse, fileSelectConfig]
   );
   const canUseInputGuide =
     enableInputGuide &&

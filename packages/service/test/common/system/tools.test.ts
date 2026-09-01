@@ -34,6 +34,21 @@ describe('initFastGPTConfig', () => {
     } as any);
 
     expect(global.feConfigs.showCustomPdfParse).toBe(true);
+    expect(global.feConfigs.showCustomDocumentParse).toBe(false);
     expect(global.systemEnv.customPdfParse?.somarkApiKey).toBe('sk-test');
+  });
+
+  it('配置通用 URL 解析器时开启外部文档格式', () => {
+    initFastGPTConfig({
+      feConfigs: {},
+      systemEnv: {
+        customPdfParse: {
+          url: 'http://document-parser.test/parse'
+        }
+      }
+    } as any);
+
+    expect(global.feConfigs.showCustomPdfParse).toBe(true);
+    expect(global.feConfigs.showCustomDocumentParse).toBe(true);
   });
 });

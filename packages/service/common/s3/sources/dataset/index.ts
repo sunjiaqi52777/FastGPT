@@ -19,7 +19,10 @@ import { addHours } from 'date-fns';
 import { getLogger, LogCategories } from '../../../logger';
 import { readFileContentBySource } from '../../../file/read/utils';
 import { ensureTextContentTypeCharset, isTextLikeFile, resolveMimeType } from '../../utils/mime';
-import { createUploadConstraints, datasetAllowedExtensions } from '../../utils/uploadConstraints';
+import {
+  createUploadConstraints,
+  getDatasetAllowedExtensions
+} from '../../utils/uploadConstraints';
 import { getFileS3Key } from '../../utils';
 import { isAuthorizedDatasetFileS3Key } from './key';
 import type { S3RawTextSource } from '../rawText';
@@ -73,7 +76,9 @@ export class S3DatasetSource extends S3PrivateBucket {
       source: 'local-file',
       ...(size !== undefined ? { size } : {}),
       uploadConstraints: {
-        allowedExtensions: datasetAllowedExtensions
+        allowedExtensions: getDatasetAllowedExtensions(
+          Boolean(global.systemEnv?.customPdfParse?.url)
+        )
       }
     });
 

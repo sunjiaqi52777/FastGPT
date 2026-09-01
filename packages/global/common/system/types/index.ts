@@ -146,6 +146,7 @@ export type FastGPTFeConfigsType = {
 
   // Compute by systemEnv.customPdfParse
   showCustomPdfParse?: boolean;
+  showCustomDocumentParse?: boolean;
   customPdfParsePrice?: number;
 
   navbarItems?: NavbarItemType[];

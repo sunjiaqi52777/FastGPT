@@ -34,15 +34,20 @@ export const getUploadChatFileType = (file: File) => {
  */
 export const isChatFileAllowedBySelectConfig = ({
   file,
-  fileSelectConfig
+  fileSelectConfig,
+  externalDocumentParserEnabled = false
 }: {
   file: Pick<File, 'name' | 'type'>;
   fileSelectConfig: AppFileSelectConfigType;
+  externalDocumentParserEnabled?: boolean;
 }) => {
   return isGlobalChatFileAllowedBySelectConfig({
     filename: file.name,
     contentType: file.type,
     fileType: getUploadChatFileType(file as File),
-    fileSelectConfig
+    fileSelectConfig: {
+      ...fileSelectConfig,
+      customPdfParse: fileSelectConfig.customPdfParse && externalDocumentParserEnabled
+    }
   });
 };

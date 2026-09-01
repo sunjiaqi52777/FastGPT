@@ -174,6 +174,7 @@ const FileSelector = ({
   canSelectAudio,
   canSelectCustomFileExtension,
   customFileExtensionList,
+  customPdfParse,
   canLocalUpload,
   canUrlUpload,
   onFileErrorChange,
@@ -354,7 +355,8 @@ const FileSelector = ({
       canSelectVideo,
       canSelectAudio,
       canSelectCustomFileExtension,
-      customFileExtensionList
+      customFileExtensionList,
+      customPdfParse: customPdfParse && feConfigs?.showCustomDocumentParse
     });
   }, [
     canSelectFile,
@@ -362,7 +364,9 @@ const FileSelector = ({
     canSelectVideo,
     canSelectAudio,
     canSelectCustomFileExtension,
-    customFileExtensionList
+    customFileExtensionList,
+    customPdfParse,
+    feConfigs?.showCustomDocumentParse
   ]);
   const fileSelectConfig = useMemo<AppFileSelectConfigType>(
     () => ({
@@ -372,7 +376,8 @@ const FileSelector = ({
       canSelectVideo,
       canSelectAudio,
       canSelectCustomFileExtension,
-      customFileExtensionList
+      customFileExtensionList,
+      customPdfParse
     }),
     [
       maxFiles,
@@ -381,7 +386,8 @@ const FileSelector = ({
       canSelectVideo,
       canSelectAudio,
       canSelectCustomFileExtension,
-      customFileExtensionList
+      customFileExtensionList,
+      customPdfParse
     ]
   );
   // Form/Plugin 文件输入的模块配额与用户配额取更小值。

@@ -1,4 +1,7 @@
-import { documentFileType } from '@fastgpt/global/common/file/constants';
+import {
+  documentFileType,
+  externalDocumentFileExtensions
+} from '@fastgpt/global/common/file/constants';
 import {
   defaultFileExtensionTypes,
   type FileExtensionKeyType
@@ -27,6 +30,12 @@ export { normalizeAllowedExtensions, normalizeFileExtension, parseAllowedExtensi
 export const avatarAllowedExtensions = normalizeAllowedExtensions(['.jpg', '.jpeg', '.png']);
 export const datasetAllowedExtensions = parseAllowedExtensions(documentFileType);
 
+export const getDatasetAllowedExtensions = (externalParserEnabled: boolean) =>
+  normalizeAllowedExtensions([
+    ...datasetAllowedExtensions,
+    ...(externalParserEnabled ? externalDocumentFileExtensions : [])
+  ]);
+
 export const getAllowedExtensionsFromFileSelectConfig = (config?: AppFileSelectConfigType) => {
   if (!config) return [];
 
@@ -35,6 +44,15 @@ export const getAllowedExtensionsFromFileSelectConfig = (config?: AppFileSelectC
 
     if (key === 'canSelectCustomFileExtension') {
       return config.customFileExtensionList || [];
+    }
+
+    if (key === 'canSelectFile') {
+      return [
+        ...defaultFileExtensionTypes.canSelectFile,
+        ...(config.customPdfParse && global.systemEnv?.customPdfParse?.url
+          ? externalDocumentFileExtensions
+          : [])
+      ];
     }
 
     return defaultFileExtensionTypes[key];

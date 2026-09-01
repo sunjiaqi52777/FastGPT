@@ -25,6 +25,7 @@ export const initFastGPTConfig = (config?: FastGPTConfigFileType) => {
     !!config.systemEnv.customPdfParse?.somarkApiKey ||
     !!config.systemEnv.customPdfParse?.textinAppId ||
     !!config.systemEnv.customPdfParse?.doc2xKey;
+  config.feConfigs.showCustomDocumentParse = !!config.systemEnv.customPdfParse?.url;
   config.feConfigs.customPdfParsePrice = config.systemEnv.customPdfParse?.price || 0;
   config.feConfigs.show_agent_sandbox = hasAgentSandboxConfig();
   config.feConfigs.uploadFileMaxSize = serviceEnv.UPLOAD_FILE_MAX_SIZE;

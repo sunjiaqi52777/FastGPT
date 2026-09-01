@@ -15,7 +15,11 @@ import { getFileIcon } from '@fastgpt/global/common/file/icon';
 import { DatasetPageContext } from '@/web/core/dataset/context/datasetPageContext';
 import { getUploadDatasetFilePresignedUrl } from '@/web/core/dataset/api/file';
 import { S3FileUploader } from '@fastgpt/web/common/file/uploader';
-import { documentFileType } from '@fastgpt/global/common/file/constants';
+import {
+  documentFileType,
+  externalDocumentFileExtensions
+} from '@fastgpt/global/common/file/constants';
+import { useSystemStore } from '@/web/common/system/useSystemStore';
 
 const DataProcess = dynamic(() => import('../commonProgress/DataProcess'));
 const PreviewData = dynamic(() => import('../commonProgress/PreviewData'));
@@ -38,6 +42,7 @@ export default React.memo(FileLocal);
 
 const SelectFile = React.memo(function SelectFile() {
   const { t } = useTranslation();
+  const { feConfigs } = useSystemStore();
 
   const { goToNext, sources, setSources } = useContextSelector(DatasetImportContext, (v) => v);
   const datasetId = useContextSelector(DatasetPageContext, (v) => v.datasetId);
@@ -182,7 +187,11 @@ const SelectFile = React.memo(function SelectFile() {
   return (
     <Box>
       <FileSelector
-        fileType={documentFileType}
+        fileType={
+          feConfigs.showCustomDocumentParse
+            ? `${documentFileType}, ${externalDocumentFileExtensions.join(', ')}`
+            : documentFileType
+        }
         selectFiles={selectFiles}
         onSelectFiles={onSelectFiles}
       />

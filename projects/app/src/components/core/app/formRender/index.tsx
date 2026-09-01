@@ -237,6 +237,7 @@ const InputRender = (props: InputRenderProps) => {
         canSelectAudio={fileSelectProps.canSelectAudio}
         canSelectCustomFileExtension={fileSelectProps.canSelectCustomFileExtension}
         customFileExtensionList={fileSelectProps.customFileExtensionList}
+        customPdfParse={props.customPdfParse}
         canLocalUpload={fileSelectProps.canLocalUpload}
         canUrlUpload={fileSelectProps.canUrlUpload}
         onFileErrorChange={props.onFileErrorChange}

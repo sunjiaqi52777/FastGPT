@@ -80,6 +80,25 @@ describe('isChatFileAllowedBySelectConfig', () => {
     ).toBe(true);
   });
 
+  it('allows OFD only when the URL parser and enhanced parsing are enabled', () => {
+    const fileSelectConfig = { canSelectFile: true, customPdfParse: true };
+
+    expect(
+      isChatFileAllowedBySelectConfig({
+        file: { name: 'document.ofd', type: 'application/octet-stream' },
+        fileSelectConfig,
+        externalDocumentParserEnabled: true
+      })
+    ).toBe(true);
+    expect(
+      isChatFileAllowedBySelectConfig({
+        file: { name: 'document.ofd', type: 'application/octet-stream' },
+        fileSelectConfig,
+        externalDocumentParserEnabled: false
+      })
+    ).toBe(false);
+  });
+
   it('allows configured audio, video and custom extensions', () => {
     const fileSelectConfig = {
       canSelectAudio: true,

@@ -59,7 +59,9 @@ const {
   }),
   mockCreatePdfParseUsage: vi.fn(),
   mockEnv: {
-    PARSE_FILE_TIMEOUT_SECONDS: 600
+    PARSE_FILE_TIMEOUT_SECONDS: 600,
+    STORAGE_DOWNLOAD_URL_MODE: 'short-proxy',
+    FILE_TOKEN_KEY: 'test-file-token-key'
   }
 }));
 
@@ -278,6 +280,62 @@ describe('readFileContentByBuffer', () => {
       expect.anything(),
       expect.objectContaining({ timeout: 1200000 })
     );
+  });
+
+  it('should use the custom URL service for external-only OFD files', async () => {
+    global.systemEnv = {
+      customPdfParse: { url: 'http://document-parser.test/parse', key: 'test-key' }
+    } as any;
+    mockAxiosPost.mockResolvedValueOnce({
+      data: { pages: 1, markdown: 'parsed-ofd' }
+    });
+
+    const result = await readFileContentByBuffer({
+      teamId,
+      tmbId,
+      extension: 'ofd',
+      buffer: Buffer.from('ofd content'),
+      encoding: 'utf-8'
+    });
+
+    expect(result.rawText).toBe('parsed-ofd');
+    expect(mockAxiosPost).toHaveBeenCalledOnce();
+    expect(mockReadRawContentFromBuffer).not.toHaveBeenCalled();
+  });
+
+  it('should reject external-only formats when the URL parser is not configured', async () => {
+    await expect(
+      readFileContentByBuffer({
+        teamId,
+        tmbId,
+        extension: 'ofd',
+        buffer: Buffer.from('ofd content'),
+        encoding: 'utf-8'
+      })
+    ).rejects.toThrow('External document parser is required for .ofd files');
+
+    expect(mockReadRawContentFromBuffer).not.toHaveBeenCalled();
+  });
+
+  it('should delegate supported office formats when enhanced parsing is enabled', async () => {
+    global.systemEnv = {
+      customPdfParse: { url: 'http://document-parser.test/parse' }
+    } as any;
+    mockAxiosPost.mockResolvedValueOnce({
+      data: { pages: 2, markdown: 'external-docx' }
+    });
+
+    const result = await readFileContentByBuffer({
+      teamId,
+      tmbId,
+      extension: 'docx',
+      buffer: Buffer.from('docx content'),
+      encoding: 'utf-8',
+      customPdfParse: true
+    });
+
+    expect(result.rawText).toBe('external-docx');
+    expect(mockReadRawContentFromBuffer).not.toHaveBeenCalled();
   });
 
   it('should report enhanced PDF usage to the caller without creating usage directly', async () => {
@@ -831,5 +889,28 @@ describe('readFileContentBySource', () => {
     expect(source.materialize).toHaveBeenCalledTimes(1);
     expect(mockReadRawContentFromSource).not.toHaveBeenCalled();
     expect(mockSomarkParsePDF).toHaveBeenCalledWith(Buffer.from('pdf'));
+  });
+
+  it('调用通用 URL 解析器时透传来源中的原始文件名', async () => {
+    global.systemEnv = {
+      customPdfParse: { url: 'http://document-parser.test/parse' }
+    } as any;
+    mockAxiosPost.mockResolvedValueOnce({
+      data: { pages: 1, markdown: 'parsed-ofd' }
+    });
+    const source = {
+      kind: 's3' as const,
+      sizeBytes: 3,
+      metadata: { filename: 'original-report.ofd' },
+      materialize: vi.fn().mockResolvedValue({
+        buffer: Buffer.from('ofd'),
+        metadata: { filename: 'original-report.ofd' }
+      })
+    };
+
+    await readFileContentBySource({ teamId, tmbId, source });
+
+    const form = mockAxiosPost.mock.calls[0]?.[1] as { getBuffer: () => Buffer };
+    expect(form.getBuffer().toString()).toContain('filename="original-report.ofd"');
   });
 });

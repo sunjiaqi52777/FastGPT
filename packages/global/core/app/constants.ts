@@ -5,7 +5,10 @@ import {
   type AppQGConfigType
 } from './type';
 import type { AppFileSelectConfigType } from './type/config.schema';
-import { documentFileExtensions } from '../../common/file/constants';
+import {
+  documentFileExtensions,
+  externalDocumentFileExtensions
+} from '../../common/file/constants';
 
 export enum AppTypeEnum {
   folder = 'folder',
@@ -97,7 +100,8 @@ export const getUploadFileType = ({
   canSelectVideo,
   canSelectAudio,
   canSelectCustomFileExtension,
-  customFileExtensionList
+  customFileExtensionList,
+  customPdfParse
 }: {
   canSelectFile?: boolean;
   canSelectImg?: boolean;
@@ -105,10 +109,14 @@ export const getUploadFileType = ({
   canSelectAudio?: boolean;
   canSelectCustomFileExtension?: boolean;
   customFileExtensionList?: string[];
+  customPdfParse?: boolean;
 }) => {
   const types: string[] = [];
   if (canSelectFile) {
     types.push(...defaultFileExtensionTypes.canSelectFile);
+    if (customPdfParse) {
+      types.push(...externalDocumentFileExtensions);
+    }
   }
   if (canSelectImg) {
     types.push(...defaultFileExtensionTypes.canSelectImg);

@@ -21,8 +21,18 @@ import {
   resolveFileSourceEncoding,
   resolveFileSourceExtension
 } from './source';
+import {
+  externalDocumentFileExtensions,
+  externalParseDocumentFileExtensions
+} from '@fastgpt/global/common/file/constants';
 
 const logger = getLogger(LogCategories.MODULE.DATASET.FILE);
+const externalOnlyDocumentExtensions = new Set(
+  externalDocumentFileExtensions.map((extension) => extension.slice(1))
+);
+const externalParseDocumentExtensions = new Set(
+  externalParseDocumentFileExtensions.map((extension) => extension.slice(1))
+);
 
 export const readFileContentByBuffer = async ({
   teamId,
@@ -226,13 +236,13 @@ const readFileContent = async ({
     const token = global.systemEnv.customPdfParse?.key;
     if (!url) return systemParse();
 
-    const { buffer, extension: materializedExtension } = await getMaterializedFile();
+    const { buffer, extension: materializedExtension, metadata } = await getMaterializedFile();
     const start = Date.now();
     logger.info('Start parsing file via external service', { extension });
 
     const data = new FormData();
     data.append('file', buffer, {
-      filename: `file.${materializedExtension}`
+      filename: metadata?.filename || `file.${materializedExtension}`
     });
     const { data: response } = await axios.post<{
       pages: number;
@@ -364,6 +374,19 @@ const readFileContent = async ({
   logger.debug('Start parsing file', { extension });
 
   const parseResult = await (async () => {
+    if (externalOnlyDocumentExtensions.has(extension)) {
+      if (!global.systemEnv.customPdfParse?.url) {
+        throw new Error(`External document parser is required for .${extension} files`);
+      }
+      return await parsePdfFromCustomService();
+    }
+    if (
+      customPdfParse &&
+      global.systemEnv.customPdfParse?.url &&
+      externalParseDocumentExtensions.has(extension)
+    ) {
+      return await parsePdfFromCustomService();
+    }
     if (extension === 'pdf') {
       return await pdfParseFn();
     }

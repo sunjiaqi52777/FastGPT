@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { isChatFileAllowedBySelectConfig } from '@fastgpt/global/core/app/constants';
+import {
+  getUploadFileType,
+  isChatFileAllowedBySelectConfig
+} from '@fastgpt/global/core/app/constants';
+
+describe('getUploadFileType', () => {
+  it('adds external-only formats only for enhanced parsing', () => {
+    expect(getUploadFileType({ canSelectFile: true })).not.toContain('.ofd');
+    expect(getUploadFileType({ canSelectFile: true, customPdfParse: true })).toContain('.ofd');
+  });
+});
 
 describe('isChatFileAllowedBySelectConfig', () => {
   it('matches configured extensions case-insensitively', () => {

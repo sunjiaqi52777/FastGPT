@@ -10,8 +10,7 @@ import { type ApiRequestProps } from '@fastgpt/next/type';
 import { WritePermissionVal } from '@fastgpt/global/support/permission/constant';
 import { multer } from '@fastgpt/service/common/file/multer';
 import { getS3DatasetSource } from '@fastgpt/service/common/s3/sources/dataset';
-import { documentFileType } from '@fastgpt/global/common/file/constants';
-import { parseAllowedExtensions } from '@fastgpt/service/common/s3/utils/uploadConstraints';
+import { getDatasetAllowedExtensions } from '@fastgpt/service/common/s3/utils/uploadConstraints';
 import { checkDatasetIndexLimit } from '@fastgpt/service/support/permission/teamLimit';
 import { decodeMultipartFilename } from '@fastgpt/service/common/s3/filename';
 import { getLogger, LogCategories } from '@fastgpt/service/common/logger';
@@ -27,7 +26,7 @@ async function handler(req: ApiRequestProps): Promise<CreateCollectionWithResult
     const formData = await multer.resolveFormData({
       request: req,
       maxFileSize: global.feConfigs.uploadFileMaxSize,
-      allowedExtensions: parseAllowedExtensions(documentFileType)
+      allowedExtensions: getDatasetAllowedExtensions(Boolean(global.systemEnv?.customPdfParse?.url))
     });
     filepaths.push(formData.fileMetadata.path);
 
