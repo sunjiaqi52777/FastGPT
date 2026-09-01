@@ -4,6 +4,7 @@ import {
   getDatasetImageIndexCapability,
   getDatasetImageTrainingMode,
   getS3ObjectKeysFromMarkdownTexts,
+  replaceS3KeysWithPreviewUrlMap,
   replaceS3KeysToPreviewUrls,
   replaceS3KeyToPreviewUrl
 } from '@fastgpt/service/core/dataset/utils';
@@ -35,6 +36,10 @@ vi.mock('@fastgpt/service/common/s3/utils', () => ({
 
 vi.mock('@fastgpt/service/common/s3/accessLink', () => ({
   createS3DownloadAccessUrls: mockCreateS3DownloadAccessUrls
+}));
+
+vi.mock('@fastgpt/service/common/s3/config/constants', () => ({
+  S3Buckets: { private: 'private' }
 }));
 
 vi.mock('@fastgpt/service/common/s3/contracts/type', () => ({
@@ -495,6 +500,81 @@ describe('批量 S3 预览 URL 格式化', () => {
         '![avatar](avatar/team/avatar.png)'
       ])
     ).toEqual(['dataset/team/a.png', 'chat/app/b.pdf']);
+  });
+
+  it('应按文本顺序提取 Markdown 与 HTML img 中的 key', () => {
+    expect(
+      getS3ObjectKeysFromMarkdownTexts([
+        [
+          '<img alt="first" src="dataset/team/html-first.png">',
+          '![second](chat/app/markdown-second.png)',
+          "<IMG SRC='temp/session/html-third.png' class='preview'>",
+          '<img src=dataset/team/unquoted-fourth.png>',
+          '<img src="dataset/team/html-first.png">'
+        ].join('\n')
+      ])
+    ).toEqual([
+      'dataset/team/html-first.png',
+      'chat/app/markdown-second.png',
+      'temp/session/html-third.png',
+      'dataset/team/unquoted-fourth.png'
+    ]);
+  });
+
+  it('应忽略 HTML img 中的外部 URL、data URL、非白名单 key 和 data-src', () => {
+    expect(
+      getS3ObjectKeysFromMarkdownTexts([
+        [
+          '<img src="https://example.com/image.png">',
+          '<img src="data:image/png;base64,abc">',
+          '<img src="avatar/team/avatar.png">',
+          '<img data-src="dataset/team/lazy.png">'
+        ].join('\n')
+      ])
+    ).toEqual([]);
+  });
+
+  it('应替换 HTML img src 并保留标签大小写、引号和其他属性', () => {
+    const previewUrlMap = new Map([
+      ['dataset/team/double.png', 'https://preview.test/double'],
+      ['chat/app/single.png', 'https://preview.test/single'],
+      ['temp/session/unquoted.png', 'https://preview.test/unquoted']
+    ]);
+    const text = [
+      '<img class="double" src="dataset/team/double.png" alt="a > b">',
+      "<IMG SRC='chat/app/single.png' loading='lazy'>",
+      '<img src=temp/session/unquoted.png>',
+      '<img data-src="dataset/team/lazy.png" src="https://example.com/original.png">'
+    ].join('\n');
+
+    expect(replaceS3KeysWithPreviewUrlMap(text, previewUrlMap)).toBe(
+      [
+        '<img class="double" src="https://preview.test/double" alt="a > b">',
+        "<IMG SRC='https://preview.test/single' loading='lazy'>",
+        '<img src="https://preview.test/unquoted">',
+        '<img data-src="dataset/team/lazy.png" src="https://example.com/original.png">'
+      ].join('\n')
+    );
+  });
+
+  it('HTML img 应复用现有批量签发流程', async () => {
+    const result = await replaceS3KeysToPreviewUrls(
+      [
+        '<img src="dataset/team/a.png">',
+        '<img src="dataset/team/a.png"><img src="chat/app/b.png">'
+      ],
+      expiredTime
+    );
+
+    expect(mockCreateS3DownloadAccessUrls).toHaveBeenCalledTimes(1);
+    expect(mockCreateS3DownloadAccessUrls.mock.calls[0][0].map((item) => item.objectKey)).toEqual([
+      'dataset/team/a.png',
+      'chat/app/b.png'
+    ]);
+    expect(result).toEqual([
+      '<img src="https://example.com/api/system/file/d/mock-short-link-dataset/team/a.png">',
+      '<img src="https://example.com/api/system/file/d/mock-short-link-dataset/team/a.png"><img src="https://example.com/api/system/file/d/mock-short-link-chat/app/b.png">'
+    ]);
   });
 
   it('多段文本中的重复 key 应只进入一次批量签发并保持文本顺序', async () => {

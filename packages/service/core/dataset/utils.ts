@@ -28,6 +28,15 @@ const createS3MarkdownKeyRegex = () => {
   );
 };
 
+/** Match complete img tags without treating angle brackets inside quoted attributes as tag ends. */
+const createHtmlImageTagRegex = () => /<img\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
+const createHtmlImageSrcRegex = () => /(\s+src\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i;
+
+const getHtmlImageObjectKey = (imageTag: string) => {
+  const srcMatch = createHtmlImageSrcRegex().exec(imageTag);
+  return (srcMatch?.[2] ?? srcMatch?.[3] ?? srcMatch?.[4])?.trim();
+};
+
 const isPreviewUrlS3ObjectKey = (objectKey: string) =>
   previewUrlS3Sources.some((source) => isS3ObjectKey(objectKey, source));
 
@@ -40,12 +49,25 @@ export const getS3ObjectKeysFromMarkdownTexts = (texts: Array<string | undefined
   for (const text of texts) {
     if (!text || typeof text !== 'string') continue;
 
+    const matches: Array<{ index: number; objectKey: string }> = [];
+
     for (const match of text.matchAll(createS3MarkdownKeyRegex())) {
       const objectKey = match[3] ?? match[4];
       if (objectKey && isPreviewUrlS3ObjectKey(objectKey)) {
-        objectKeys.add(objectKey);
+        matches.push({ index: match.index, objectKey });
       }
     }
+
+    for (const match of text.matchAll(createHtmlImageTagRegex())) {
+      const objectKey = getHtmlImageObjectKey(match[0]);
+      if (objectKey && isPreviewUrlS3ObjectKey(objectKey)) {
+        matches.push({ index: match.index, objectKey });
+      }
+    }
+
+    matches
+      .sort((left, right) => left.index - right.index)
+      .forEach(({ objectKey }) => objectKeys.add(objectKey));
   }
 
   return Array.from(objectKeys);
@@ -107,6 +129,21 @@ export const replaceS3KeysWithPreviewUrlMap = (
         content.slice(0, match.index) + replacement + content.slice(match.index + full.length);
     }
   }
+
+  content = content.replace(createHtmlImageTagRegex(), (imageTag) => {
+    return imageTag.replace(
+      createHtmlImageSrcRegex(),
+      (full, prefix: string, doubleQuoted?: string, singleQuoted?: string, unquoted?: string) => {
+        const objectKey = (doubleQuoted ?? singleQuoted ?? unquoted)?.trim();
+        const previewUrl = objectKey ? previewUrlMap.get(objectKey) : undefined;
+        if (!previewUrl) return full;
+
+        if (doubleQuoted !== undefined) return `${prefix}"${previewUrl}"`;
+        if (singleQuoted !== undefined) return `${prefix}'${previewUrl}'`;
+        return `${prefix}"${previewUrl}"`;
+      }
+    );
+  });
 
   return content;
 };
