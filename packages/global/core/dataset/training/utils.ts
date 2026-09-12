@@ -164,7 +164,12 @@ export const computedCollectionChunkSettings = <T extends ChunkSettingsType>({
     }
   })();
 
-  if (chunkSettingMode === ChunkSettingModeEnum.auto) {
+  // intelligent 与 auto 共用参数档:平台不本地切分,但 chunkSize 要给外部分块服务当
+  // chunk_sizes.text、indexSize 要给分块结果建索引,都需要确定值
+  if (
+    chunkSettingMode === ChunkSettingModeEnum.auto ||
+    chunkSettingMode === ChunkSettingModeEnum.intelligent
+  ) {
     cloneChunkSettings.chunkSplitMode = DataChunkSplitModeEnum.paragraph;
     cloneChunkSettings.paragraphChunkAIMode = ParagraphChunkAIModeEnum.forbid;
     cloneChunkSettings.paragraphChunkDeep = 5;

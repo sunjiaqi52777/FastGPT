@@ -145,6 +145,7 @@ export const createApiDatasetCollection = async ({
           dataset,
           createCollectionParams: {
             ...body,
+            ...(file.chunkConfig || {}),
             teamId,
             tmbId,
             type: DatasetCollectionTypeEnum.apiFile,

@@ -29,7 +29,9 @@ async function handler(req: ApiRequestProps) {
     });
     filepaths.push(result.fileMetadata.path);
     const filename = decodeMultipartFilename(result.fileMetadata.originalname);
-    const { datasetId, parentId } = CreateTemplateCollectionFormSchema.parse(result.data);
+    const { datasetId, parentId, ...collectionParams } = CreateTemplateCollectionFormSchema.parse(
+      result.data
+    );
 
     const { teamId, tmbId, dataset } = await authDataset({
       req,
@@ -75,6 +77,7 @@ async function handler(req: ApiRequestProps) {
       rawText,
       backupParse: true,
       createCollectionParams: {
+        ...collectionParams,
         teamId,
         tmbId,
         datasetId: dataset._id,

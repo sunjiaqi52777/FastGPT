@@ -52,7 +52,8 @@ export const defaultFormData: ImportFormType = {
   autoIndexes: false,
   indexPrefixTitle: false,
 
-  chunkSettingMode: ChunkSettingModeEnum.auto,
+  // 智能分块(auto)依赖外部分块服务,需用户明确选择后才启用;默认走 custom 本地分块
+  chunkSettingMode: ChunkSettingModeEnum.custom,
   chunkSplitMode: DataChunkSplitModeEnum.paragraph,
   paragraphChunkAIMode: ParagraphChunkAIModeEnum.forbid,
   paragraphChunkDeep: 5,

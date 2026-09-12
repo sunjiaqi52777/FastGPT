@@ -1,11 +1,15 @@
 import {
+  ChunkSettingModeEnum,
   ChunkTriggerConfigTypeEnum,
+  DatasetCollectionDataProcessModeEnum,
   DatasetSourceReadTypeEnum
 } from '@fastgpt/global/core/dataset/constants';
 import { urlsFetch } from '../../common/string/cheerio';
 import { type TextSplitProps } from '../../common/string/textSplitter';
 import { readFileContentBySource } from '../../common/file/read/utils';
 import { getApiDatasetRequest } from './apiDataset';
+import { chunkByIultmzh } from '../../thirdProvider/sangfor/chunk';
+import { serviceEnv } from '../../env';
 import Papa from 'papaparse';
 import type { ApiDatasetServerType } from '@fastgpt/global/core/dataset/apiDataset/type';
 import { text2Chunks } from '../../worker/function';
@@ -18,6 +22,9 @@ import { DatasetErrEnum } from '@fastgpt/global/common/error/code/dataset';
 import { getBackendFileOperationTimeoutMs } from '../../common/file/parseTimeout';
 import { createExternalHttpFileSource } from '../../common/file/read/source';
 import { getTeamFileSizeLimitBytes } from '../../support/permission/fileLimit';
+import { getLogger, LogCategories } from '../../common/logger';
+
+const logger = getLogger(LogCategories.MODULE.DATASET.FILE_PARSE);
 
 const datasetCsvColumnTypes = new Set(['q', 'a', 'index', 'indexes', 'metadata']);
 
@@ -249,6 +256,9 @@ export const rawText2Chunks = async ({
   backupParse,
   chunkSize = 512,
   imageIdList,
+  chunkSettingMode,
+  trainingType,
+  chunkTimeoutMs,
   ...splitProps
 }: {
   rawText: string;
@@ -259,6 +269,11 @@ export const rawText2Chunks = async ({
 
   backupParse?: boolean;
   tableParse?: boolean;
+  // chunkSettingMode=intelligent 且训练类型为 chunk 时,「文本→chunk」委托给外部智能分块服务
+  chunkSettingMode?: ChunkSettingModeEnum;
+  trainingType?: DatasetCollectionDataProcessModeEnum;
+  // 覆盖 SANGFOR_CHUNK_TIMEOUT(默认 60 分钟)。交互式预览链路传短超时,避免外部服务慢/不可用时长时间挂住
+  chunkTimeoutMs?: number;
 } & TextSplitProps): Promise<
   {
     q: string;
@@ -382,6 +397,22 @@ export const rawText2Chunks = async ({
     if (textLength < chunkTriggerMinSize) {
       return [{ q: rawText, a: '', imageIdList }];
     }
+  }
+
+  // 智能分块: chunkSettingMode=intelligent 且训练类型为 chunk 时,把「文本→chunk」委托给 sangfor 智能分块服务。
+  // 未配置服务地址、请求失败、响应异常都由 chunkByIultmzh 抛错,不静默回退本地分块。
+  if (
+    trainingType === DatasetCollectionDataProcessModeEnum.chunk &&
+    chunkSettingMode === ChunkSettingModeEnum.intelligent
+  ) {
+    return chunkByIultmzh({
+      text: rawText,
+      imageIdList,
+      url: serviceEnv.SANGFOR_CHUNK_URL,
+      key: serviceEnv.SANGFOR_CHUNK_KEY,
+      chunkSize,
+      timeoutMs: chunkTimeoutMs ?? serviceEnv.SANGFOR_CHUNK_TIMEOUT * 60 * 1000
+    });
   }
 
   const { chunks } = await text2Chunks({

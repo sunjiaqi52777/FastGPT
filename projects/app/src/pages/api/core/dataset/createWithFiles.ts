@@ -139,7 +139,7 @@ async function handler(req: ApiRequestProps): Promise<CreateDatasetWithFilesResp
             trainingType: DatasetCollectionDataProcessModeEnum.chunk,
             chunkTriggerType: ChunkTriggerConfigTypeEnum.minSize,
             chunkTriggerMinSize: 1000,
-            chunkSettingMode: ChunkSettingModeEnum.auto,
+            chunkSettingMode: ChunkSettingModeEnum.custom,
             chunkSplitMode: DataChunkSplitModeEnum.paragraph,
             chunkSize: 1024,
             indexSize: 512,

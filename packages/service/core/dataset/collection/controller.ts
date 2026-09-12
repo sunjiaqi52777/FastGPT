@@ -1,6 +1,7 @@
 import { getModelHandle } from '../../ai/model';
 import { getDatasetModelReference } from '../model';
 import {
+  ChunkSettingModeEnum,
   DatasetCollectionDataProcessModeEnum,
   DatasetCollectionTypeEnum
 } from '@fastgpt/global/core/dataset/constants';
@@ -80,6 +81,12 @@ export const createCollectionAndInsertData = async ({
     vectorModel: embeddingModelData
   });
 
+  // `chunkSettingMode` selects the custom chunk API. It must not replace the
+  // strategy fields that the caller supplied for that API.
+  if (createCollectionParams.chunkSettingMode === ChunkSettingModeEnum.auto) {
+    Object.assign(formatCreateCollectionParams, createCollectionParams);
+  }
+
   const teamId = formatCreateCollectionParams.teamId;
   const tmbId = formatCreateCollectionParams.tmbId;
 
@@ -154,6 +161,8 @@ export const createCollectionAndInsertData = async ({
         customReg: formatCreateCollectionParams.chunkSplitter
           ? [formatCreateCollectionParams.chunkSplitter]
           : [],
+        chunkSettingMode: formatCreateCollectionParams.chunkSettingMode,
+        trainingType,
         backupParse
       });
       return {

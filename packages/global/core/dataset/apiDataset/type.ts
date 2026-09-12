@@ -8,7 +8,10 @@ export const APIFileItemSchema = z.object({
   type: z.enum(['file', 'folder']),
   updateTime: z.coerce.date(),
   createTime: z.coerce.date(),
-  hasChild: z.boolean().optional()
+  hasChild: z.boolean().optional(),
+  // Agent Builder may attach a per-file import override while keeping the
+  // upstream API dataset item shape backward compatible.
+  chunkConfig: z.record(z.string(), z.unknown()).optional()
 });
 export type APIFileItemType = z.infer<typeof APIFileItemSchema>;
 

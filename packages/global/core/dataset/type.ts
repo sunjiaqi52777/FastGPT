@@ -45,6 +45,27 @@ export const ChunkSettingsSchema = z.object({
   imageIndex: z.boolean().optional().meta({ description: '图片索引' }),
   autoIndexes: z.boolean().optional().meta({ description: '自动生成索引' }),
   indexPrefixTitle: z.boolean().optional().meta({ description: '索引前缀标题' }),
+  hypeIndexes: z.boolean().optional().meta({ description: '超级索引' }),
+  small2bigIndexes: z.boolean().optional().meta({ description: '小到大索引' }),
+  autoIndexesConfig: z
+    .object({ questionIndex: z.boolean().optional(), summaryIndex: z.boolean().optional() })
+    .optional(),
+  hypeIndexPrompt: z.string().optional(),
+  small2bigConfig: z
+    .object({
+      chunkSize: z.number().optional(),
+      customSplitChar: z.string().optional(),
+      overlap: z.number().optional(),
+      overlapRatio: z.number().optional(),
+      maxChildChunks: z.number().optional(),
+      paragraphChunkDeep: z.number().optional(),
+      paragraphChunkMinSize: z.number().optional(),
+      maxSize: z.number().optional(),
+      customReg: z.array(z.string()).optional()
+    })
+    .optional(),
+  autoIndexesPrompt: z.string().optional(),
+  imageIndexPrompt: z.string().optional(),
 
   chunkSettingMode: z
     .enum(ChunkSettingModeEnum)

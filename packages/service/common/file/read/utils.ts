@@ -240,7 +240,7 @@ const readFileContent = async ({
       markdown: string;
       error?: object | string;
     }>(url, data, {
-      timeout: getBackendFileOperationTimeoutMs(),
+      timeout: global.systemEnv.customPdfParse?.timeout || getBackendFileOperationTimeoutMs(),
       headers: {
         ...data.getHeaders(),
         Authorization: token ? `Bearer ${token}` : undefined

@@ -199,7 +199,9 @@ export const CreateBackupCollectionMultipartSchema = z.object({
  * Content-Type: multipart/form-data
  * ============================================================================ */
 // handler 内 parse 用
-export const CreateTemplateCollectionFormSchema = z.object({
+export const CreateTemplateCollectionFormSchema = ApiCreateCollectionBaseSchema.omit({
+  tags: true
+}).extend({
   datasetId: z.string().meta({ description: '数据集 ID' }),
   parentId: ParentIdSchema.optional().meta({ description: '父级目录 ID' })
 });
